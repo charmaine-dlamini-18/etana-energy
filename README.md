@@ -20,10 +20,6 @@ writes a monthly time-of-use summary.
 └── README.md
 ```
 
-Everything you write lives at the top level (`main.py`, `etana/`, `tests/`);
-`candidate_pack/` is read-only input. Ignore any `__MACOSX/` folder or `.DS_Store`
-file - those are macOS zip artefacts, not part of the project.
-
 ## Requirements
 
 - Python 3.10+
