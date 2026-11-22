@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# macOS
+.DS_Store
+__MACOSX/
+
+# Virtual environments
+.venv/
+venv/
