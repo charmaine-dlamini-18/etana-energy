@@ -18,23 +18,29 @@ from etana.reports import (
 
 
 def load_config(path):
+    # Read the JSON allocation config from disk.
     with open(path, encoding="utf-8") as handle:
         return json.load(handle)
 
 
 def main():
+    # Set up command-line arguments for input and output folders.
     parser = argparse.ArgumentParser(description="Etana Energy June 2026 allocation")
     parser.add_argument("--data-dir", default="candidate_pack/data")
     parser.add_argument("--out-dir", default="outputs")
     args = parser.parse_args()
 
+    # Resolve paths and make sure the output folder exists.
     data_dir = Path(args.data_dir)
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Load config and build the expected interval timestamps.
     config = load_config(data_dir / "allocation_config.json")
     starts = month_starts_utc(config["billing_month"])
     sast_starts = month_starts_sast(config["billing_month"])
 
+    # Load each source file and collect any data quality issues.
     issues = []
     meterflow, found = load_meterflow(data_dir / "meterflow_2026-06.csv", starts)
     issues += found
@@ -45,16 +51,20 @@ def main():
     )
     issues += found
 
+    # Merge the two consumption sources into one lookup.
     consumption = {}
     consumption.update(meterflow)
     consumption.update(powertrack)
 
+    # Allocate generation to sites and track leftover energy.
     rows, unallocated = allocate(config, generation, consumption, starts)
 
+    # Write the reports to the output folder.
     write_data_quality_report(out_dir / "data_quality_report.md", issues)
     write_monthly_summary_csv(out_dir / "monthly_summary.csv", rows)
     write_monthly_summary_md(out_dir / "monthly_summary.md", rows, unallocated)
 
+    # Print a short run summary.
     print(f"Wrote reports to {out_dir}")
     print(f"Total unallocated generation: {unallocated:.3f} kWh")
 

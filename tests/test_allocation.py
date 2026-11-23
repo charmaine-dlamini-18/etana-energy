@@ -7,14 +7,17 @@ from etana.normalise import SAST, load_meterflow, month_starts_utc
 
 
 def sast_utc(text):
+    # Convert a local SAST time string into a UTC datetime.
     return datetime.fromisoformat(text).replace(tzinfo=SAST).astimezone(timezone.utc)
 
 
 def test_june_has_1440_intervals():
+    # June has 30 days x 48 half-hours.
     assert len(month_starts_utc("2026-06")) == 1440
 
 
 def test_tou_classification():
+    # Check peak, standard and off-peak boundaries, plus a weekend.
     assert classify_tou(sast_utc("2026-06-03 07:00:00")) == "peak"
     assert classify_tou(sast_utc("2026-06-03 09:30:00")) == "peak"
     assert classify_tou(sast_utc("2026-06-03 10:00:00")) == "standard"
@@ -24,6 +27,7 @@ def test_tou_classification():
 
 
 def test_allocation_is_capped_and_remainder_unallocated():
+    # Two sites at 60% and 40% of a single interval.
     config = {
         "sites": [
             {"site": "A", "meter": "M1", "allocation_pct": 60.0},
@@ -31,6 +35,7 @@ def test_allocation_is_capped_and_remainder_unallocated():
         ],
         "wheeling_rates_zar_per_kwh": {"peak": 2.5, "standard": 1.8, "offpeak": 1.1},
     }
+    # One interval with 100 kWh generated.
     start = month_starts_utc("2026-06")[0]
     generation = {start: 100.0}
     consumption = {("M1", start): 20.0, ("M2", start): 100.0}
@@ -38,6 +43,7 @@ def test_allocation_is_capped_and_remainder_unallocated():
     rows, unallocated = allocate(config, generation, consumption, [start])
     by_site = {row["site"]: row for row in rows}
 
+    # Site A is capped by its usage, site B gets its full share.
     assert by_site["A"]["allocated_kwh"] == 20.0
     assert by_site["B"]["allocated_kwh"] == 40.0
     assert by_site["B"]["residual_kwh"] == 60.0
@@ -45,6 +51,7 @@ def test_allocation_is_capped_and_remainder_unallocated():
 
 
 def test_meterflow_keeps_last_duplicate():
+    # Two rows for the same interval; the last value should win.
     starts = month_starts_utc("2026-06")
     content = (
         "meter_serial,reading_timestamp_utc,consumption_kwh\n"
@@ -56,5 +63,6 @@ def test_meterflow_keeps_last_duplicate():
         path.write_text(content, encoding="utf-8")
         readings, issues = load_meterflow(path, starts)
 
+    # The duplicate is kept as 12 and reported as an issue.
     assert readings[("MTR-1", starts[0])] == 12.0
     assert any("duplicate" in message for _, message in issues)
