@@ -7,7 +7,6 @@ writes a monthly time-of-use summary.
 ## Layout
 
 ```
-.
 ├── main.py            # entry point: wires the three steps together
 ├── etana/             # the program
 │   ├── normalise.py   # load + clean the three feeds
@@ -15,7 +14,7 @@ writes a monthly time-of-use summary.
 │   └── reports.py     # write the data-quality and summary reports
 ├── tests/             # pytest suite
 ├── outputs/           # generated reports (recreated on each run)
-├── candidate_pack/    # PROVIDED INPUT (brief PDF + data) - do not edit
+├── candidate_pack/    # PROVIDED INPUT
 ├── requirements.txt
 └── README.md
 ```
